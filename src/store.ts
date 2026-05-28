@@ -7,6 +7,7 @@ const defaultSettings: AppSettings = {
   walletNumber: '01000000000',
   instapayHandle: 'user@instapay',
   fawryNumber: '123456789',
+  socialLinks: { phone: '', instagram: '', facebook: '', telegram: '' }
 };
 
 // --- Helper Functions ---
@@ -40,6 +41,17 @@ export const store = {
   },
   deleteProduct: (id: string) => {
     setLocal('products', store.getProducts().filter((p) => p.id !== id));
+  },
+  incrementProductView: (id: string) => {
+    const products = store.getProducts();
+    const existing = products.findIndex((p) => p.id === id);
+    if (existing >= 0) {
+      products[existing] = {
+        ...products[existing],
+        views: (products[existing].views || 0) + 1
+      };
+      setLocal('products', products);
+    }
   },
 
   getCategories: () => getLocal<Category[]>('categories', []),

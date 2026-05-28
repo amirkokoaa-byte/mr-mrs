@@ -18,6 +18,12 @@ export interface Product {
   category: string;
   imageUrl: string;
   reviews?: Review[];
+  isArchived?: boolean;
+  isAvailable?: boolean;
+  offerEndTime?: string;
+  showInSpecialOffers?: boolean;
+  isPinned?: boolean;
+  views?: number;
 }
 
 export interface User {
@@ -39,6 +45,12 @@ export interface AppSettings {
   walletNumber: string;
   instapayHandle: string;
   fawryNumber: string;
+  socialLinks?: {
+    phone?: string;
+    instagram?: string;
+    facebook?: string;
+    telegram?: string;
+  };
 }
 
 export interface AiOrder {

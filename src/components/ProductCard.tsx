@@ -17,12 +17,16 @@ export const ProductCard = ({
   onLikeToggle: (e: React.MouseEvent, p: Product) => void;
 }) => {
   const currentPrice = calculatePrice(product.price, product.discount);
+  const isFlashActive = product.offerEndTime && new Date(product.offerEndTime).getTime() > Date.now();
 
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[#2d2d2d] rounded-[15px] p-[10px] border border-white/5 flex flex-col gap-2 cursor-pointer group hover:ring-1 hover:ring-white/20 transition-all relative block"
+      className={cn(
+        "bg-[#2d2d2d] rounded-[15px] p-[10px] border border-white/5 flex flex-col gap-2 cursor-pointer group hover:ring-1 hover:ring-white/20 transition-all relative block",
+        isFlashActive ? "flash-offer" : ""
+      )}
       onClick={onClick}
     >
       <div className="relative h-[180px] overflow-hidden bg-[#3d3d3d] rounded-[10px]">

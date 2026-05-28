@@ -69,6 +69,7 @@ export const CartModal = ({ isOpen, onClose, cart, products, onUpdateQuantity, o
         </div>
 
         <div className="p-4 border-t border-white/10 bg-black/20">
+          <p className="mt-4 mb-4 text-sm text-gray-400 text-center">+ مصاريف الشحن حسب المحافظة</p>
           <div className="flex justify-between items-center mb-6 text-xl">
             <span className="text-gray-300">الإجمالي:</span>
             <span className="font-bold">{total.toFixed(2)} ج.م</span>
@@ -97,7 +98,10 @@ export const CheckoutModal = ({ isOpen, onClose, settings }: { isOpen: boolean, 
           <button onClick={onClose} className="hover:bg-gray-700 p-2 rounded-full transition-colors"><X size={20} /></button>
         </div>
         <div className="p-6 space-y-6">
-          <p className="text-gray-300 text-center mb-4">يرجى تحويل قيمة الطلب عبر إحدى الطرق التالية ثم التواصل معنا لتأكيد الطلب:</p>
+          <p className="text-gray-300 text-center mb-4 leading-relaxed">
+            يرجى تحويل قيمة الطلب عبر إحدى الطرق التالية ثم التواصل معنا لتأكيد الطلب<br/>
+            <span className="text-white font-bold block mt-2 text-sm bg-purple-500/20 p-2 rounded-lg">واحتفظ ب اسكرين شوت للتحويل  لتقديمه عند الطلب</span>
+          </p>
           
           <div className="space-y-4">
             {settings.walletNumber && (

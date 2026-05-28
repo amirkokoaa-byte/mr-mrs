@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Product, Review } from '../types';
 import { calculatePrice } from '../utils';
-import { ShoppingCart, Heart, ArrowRight, Share2, Star, Upload } from 'lucide-react';
+import { ShoppingCart, Heart, ArrowRight, Share2, Star, Upload, Eye, Clock } from 'lucide-react';
 import { ProductCard } from './ProductCard';
-import { motion } from 'motion/react';
 import { store } from '../store';
+import { cn } from '../utils';
 
 export const ProductDetails = ({ 
   product, 
@@ -30,15 +30,55 @@ export const ProductDetails = ({
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewImage, setReviewImage] = useState('');
   
+  const [timeLeft, setTimeLeft] = useState<{ hours: number, mins: number, secs: number } | null>(null);
+
+  const PREDEFINED_COLORS = [
+    { name: 'أحمر', hex: '#ef4444' },
+    { name: 'أزرق', hex: '#3b82f6' },
+    { name: 'أخضر', hex: '#22c55e' },
+    { name: 'أسود', hex: '#000000' },
+    { name: 'أبيض', hex: '#ffffff' },
+    { name: 'رمادي', hex: '#6b7280' },
+    { name: 'أصفر', hex: '#eab308' },
+    { name: 'وردي', hex: '#ec4899' },
+    { name: 'بنفسجي', hex: '#a855f7' },
+    { name: 'بني', hex: '#92400e' },
+    { name: 'برتقالي', hex: '#f97316' },
+  ];
+  
   // Basic recommendation logic (same category or random)
   const similarProducts = allProducts
-    .filter(p => p.id !== product.id && (p.category === product.category || true))
+    .filter(p => p.id !== product.id && !p.isArchived)
     .sort(() => 0.5 - Math.random())
-    .slice(0, 6);
+    .slice(0, 4);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [product.id]);
+
+  useEffect(() => {
+    if (!product.offerEndTime) {
+      setTimeLeft(null);
+      return;
+    }
+    const endTime = new Date(product.offerEndTime).getTime();
+    
+    const tick = () => {
+      const now = Date.now();
+      const diff = endTime - now;
+      if (diff <= 0) {
+        setTimeLeft({ hours: 0, mins: 0, secs: 0 });
+      } else {
+        const h = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+        setTimeLeft({ hours: h, mins: m, secs: s });
+      }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [product.offerEndTime]);
 
   const handleShare = () => {
     if (navigator.share) {
@@ -78,6 +118,8 @@ export const ProductDetails = ({
     setReviewRating(5);
   };
 
+  const isOfferEnded = timeLeft && timeLeft.hours === 0 && timeLeft.mins === 0 && timeLeft.secs === 0;
+
   return (
     <div className="flex-1 pb-16 bg-[#1a1a1a]">
       <div className="container mx-auto p-4 md:p-8">
@@ -90,18 +132,25 @@ export const ProductDetails = ({
           {/* Image */}
           <div className="relative rounded-xl overflow-hidden bg-[#3d3d3d] border border-white/5 aspect-square">
             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-            {product.discount > 0 && (
+            
+            <div className="absolute top-[10px] left-[10px] bg-black/60 rounded-lg p-2 z-10 shadow-md flex flex-col items-center justify-center min-w-[50px] backdrop-blur-sm border border-white/10">
+              <Eye size={18} className="text-gray-300 mb-1" />
+              <span className="text-white text-xs font-bold font-mono">{product.views || 0}</span>
+            </div>
+
+            {product.discount > 0 && !isOfferEnded && (
               <div className="absolute top-[10px] right-[10px] bg-[#ff4444] text-white px-3 py-1 font-bold rounded-[4px] text-lg z-10 shadow-md">
                 خصم {product.discount}%
               </div>
             )}
+            
             <button 
               onClick={(e) => onLikeToggle(e, product)}
-              className="absolute bottom-[10px] left-[10px] bg-black/40 p-3 rounded-full hover:bg-black/60 z-10 transition-colors shadow-lg"
+              className="absolute bottom-[10px] right-[10px] bg-black/40 p-3 rounded-full hover:bg-black/60 z-10 transition-colors shadow-lg border border-white/10"
             >
               <Heart size={28} className={isLiked ? "fill-[#ff4444] text-[#ff4444]" : "text-gray-300"} />
             </button>
-            <button onClick={handleShare} className="absolute bottom-[10px] left-[60px] bg-black/40 p-3 rounded-full hover:bg-black/60 z-10 transition-colors shadow-lg text-gray-300 hover:text-white">
+            <button onClick={handleShare} className="absolute bottom-[10px] right-[60px] bg-black/40 p-3 rounded-full hover:bg-black/60 z-10 transition-colors shadow-lg text-gray-300 hover:text-white border border-white/10">
               <Share2 size={24} />
             </button>
           </div>
@@ -109,27 +158,59 @@ export const ProductDetails = ({
           {/* Details */}
           <div className="flex flex-col justify-center">
             <h1 className="text-3xl md:text-5xl font-bold mb-4">{product.name}</h1>
-            <div className="flex items-center gap-2 text-[#ffc107] mb-4">
-              {[1,2,3,4,5].map(s => <Star key={s} size={18} fill="currentColor" />)}
-              <span className="text-sm text-gray-400 mr-2">({(product.reviews?.length || 0)} تقييمات)</span>
+            
+            <div className="flex items-center justify-between mb-4">
+               <div className="flex items-center gap-2 text-[#ffc107]">
+                 {[1,2,3,4,5].map(s => <Star key={s} size={18} fill="currentColor" />)}
+                 <span className="text-sm text-gray-400 mr-2">({(product.reviews?.length || 0)} تقييمات)</span>
+               </div>
+               {product.isAvailable === false && (
+                  <span className="bg-red-500/20 text-red-500 px-3 py-1 rounded-full text-sm font-bold border border-red-500/30">نفذت الكمية</span>
+               )}
             </div>
             
             <p className="text-gray-400 text-lg mb-8 leading-relaxed whitespace-pre-line">{product.description}</p>
             
+            {timeLeft && (
+              <div className="mb-6 bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+                 <div className="flex items-center gap-2 text-purple-400 font-bold mb-2">
+                   <Clock size={20} />
+                   <span>عرض لفترة محدودة</span>
+                 </div>
+                 {isOfferEnded ? (
+                   <span className="text-[#ff4444] font-bold">تم انتهاء العرض</span>
+                 ) : (
+                   <div className="flex gap-4 font-mono text-xl text-white">
+                     <div className="flex flex-col items-center"><span className="bg-purple-500/20 px-3 py-1 rounded">{String(timeLeft.hours).padStart(2, '0')}</span><span className="text-xs text-purple-300 mt-1">ساعة</span></div>:
+                     <div className="flex flex-col items-center"><span className="bg-purple-500/20 px-3 py-1 rounded">{String(timeLeft.mins).padStart(2, '0')}</span><span className="text-xs text-purple-300 mt-1">دقيقة</span></div>:
+                     <div className="flex flex-col items-center"><span className="bg-purple-500/20 px-3 py-1 rounded">{String(timeLeft.secs).padStart(2, '0')}</span><span className="text-xs text-purple-300 mt-1">ثانية</span></div>
+                   </div>
+                 )}
+              </div>
+            )}
+            
             <div className="flex items-end gap-4 mb-8 bg-white/5 p-6 rounded-xl border border-white/10">
-              <span className="text-4xl font-bold text-white">{currentPrice.toFixed(0)} ج.م</span>
-              {product.discount > 0 && (
+              <span className="text-4xl font-bold text-white">{(isOfferEnded ? product.price : currentPrice).toFixed(0)} ج.م</span>
+              {product.discount > 0 && !isOfferEnded && (
                 <del className="text-xl font-medium text-gray-500 mb-1">{product.price.toFixed(0)} ج.م</del>
               )}
             </div>
 
             {product.colors && product.colors.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3">الألوان المتاحة:</h3>
+                <h3 className="text-lg font-medium mb-3">الألوان المتاحة: (اختر العدد عند الإضافة للسلة)</h3>
                 <div className="flex gap-2">
-                  {product.colors.map((c, i) => (
-                    <span key={i} className="px-4 py-1.5 bg-white/5 rounded-[6px] text-sm border border-white/10">{c}</span>
-                  ))}
+                  {product.colors.map((c, i) => {
+                     const colorDef = PREDEFINED_COLORS.find(x => x.name === c);
+                     if (colorDef) {
+                        return (
+                          <div key={i} className="group relative w-8 h-8 rounded-full border border-white/20 shadow-md cursor-help" style={{ backgroundColor: colorDef.hex }}>
+                             <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-20 border border-white/10">{c}</span>
+                          </div>
+                        );
+                     }
+                     return <span key={i} className="px-4 py-1.5 bg-white/5 rounded-[6px] text-sm border border-white/10">{c}</span>;
+                  })}
                 </div>
               </div>
             )}
@@ -147,10 +228,11 @@ export const ProductDetails = ({
 
             <button 
               onClick={() => onAddToCart(product)}
-              className="w-full bg-white text-black flex items-center justify-center gap-3 py-4 rounded-xl text-xl font-bold hover:bg-gray-200 transition-colors shadow-[0_10px_20px_rgba(255,255,255,0.1)] mt-auto"
+              disabled={product.isAvailable === false}
+              className="w-full bg-white text-black flex items-center justify-center gap-3 py-4 rounded-xl text-xl font-bold hover:bg-gray-200 transition-colors shadow-[0_10px_20px_rgba(255,255,255,0.1)] mt-auto disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ShoppingCart size={24} />
-              اضف إلى السلة
+              {product.isAvailable === false ? 'نفذت الكمية' : 'اضف إلى السلة'}
             </button>
           </div>
         </div>
@@ -204,28 +286,26 @@ export const ProductDetails = ({
           </div>
         </div>
 
-        {/* Similar Products Marquee */}
+        {/* Similar Products */}
         {similarProducts.length > 0 && (
-          <div className="mt-20 overflow-hidden relative bg-white/5 p-[10px] rounded-[10px]">
-            <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-4">مقترحات تهمك:</h2>
-            <div className="group relative flex overflow-x-hidden p-4">
-              <motion.div 
-                className="flex gap-6 min-w-full"
-                animate={{ x: [0, 1035] }} // Simple animation moving left to right for RTL, tweak as needed
-                transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
-              >
-                {/* Double the array for seamless scrolling effect */}
-                {[...similarProducts, ...similarProducts].map((p, i) => (
-                  <div key={`${p.id}-${i}`} className="w-[280px] flex-shrink-0">
-                     <ProductCard 
-                        product={p} 
-                        onClick={() => onProductClick(p)} 
-                        isLiked={likedProductIds.includes(p.id)}
-                        onLikeToggle={onLikeToggle}
-                     />
+          <div className="mt-20">
+            <h2 className="text-xl font-bold mb-6 border-l-4 border-[#ff4444] pl-3 py-1">منتجات ذات صلة</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {similarProducts.map((p) => (
+                  <div key={p.id} onClick={() => onProductClick(p)} className="bg-[#2d2d2d] rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform border border-white/5 relative group">
+                     <div className="aspect-[4/5] relative w-full overflow-hidden bg-[#1a1a1a]">
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        {p.discount > 0 && <span className="absolute top-2 right-2 bg-[#ff4444] text-white text-[10px] font-bold px-2 py-1 z-10 rounded shadow-md">-{p.discount}%</span>}
+                     </div>
+                     <div className="p-3">
+                        <h4 className="font-bold text-sm truncate">{p.name}</h4>
+                        <div className="mt-1 flex items-center gap-2">
+                           <span className="font-bold text-[#ff4444]">{calculatePrice(p.price, p.discount)} ج.م</span>
+                           {p.discount > 0 && <span className="text-gray-500 text-xs line-through">{p.price}</span>}
+                        </div>
+                     </div>
                   </div>
                 ))}
-              </motion.div>
             </div>
           </div>
         )}

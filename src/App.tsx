@@ -100,7 +100,11 @@ export default function App() {
   };
 
   const navigateToProduct = (p: Product) => {
-    setSelectedProduct(p);
+    store.incrementProductView(p.id);
+    const updatedProducts = store.getProducts();
+    setProducts(updatedProducts);
+    const updatedProduct = updatedProducts.find(x => x.id === p.id) || p;
+    setSelectedProduct(updatedProduct);
     setView('product');
   };
 

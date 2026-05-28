@@ -130,20 +130,41 @@ const ManageOrders = () => {
   );
 };
 
+const PREDEFINED_COLORS = [
+  { name: 'أحمر', hex: '#ef4444' },
+  { name: 'أزرق', hex: '#3b82f6' },
+  { name: 'أخضر', hex: '#22c55e' },
+  { name: 'أسود', hex: '#000000' },
+  { name: 'أبيض', hex: '#ffffff' },
+  { name: 'رمادي', hex: '#6b7280' },
+  { name: 'أصفر', hex: '#eab308' },
+  { name: 'وردي', hex: '#ec4899' },
+  { name: 'بنفسجي', hex: '#a855f7' },
+  { name: 'بني', hex: '#92400e' },
+  { name: 'برتقالي', hex: '#f97316' },
+];
+
 const ManageProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   
-  // New Product State
+  // Product State
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [price, setPrice] = useState('');
   const [discount, setDiscount] = useState('');
-  const [colors, setColors] = useState('');
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [category, setCategory] = useState('');
   const [newCat, setNewCat] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  
+  const [isArchived, setIsArchived] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [showInSpecialOffers, setShowInSpecialOffers] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [offerDurationHours, setOfferDurationHours] = useState('');
 
   const AVAILABLE_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'One Size'];
 
@@ -151,6 +172,29 @@ const ManageProducts = () => {
     setProducts(store.getProducts());
     setCategories(store.getCategories());
   }, []);
+
+  const handleEdit = (p: Product) => {
+    setEditingId(p.id);
+    setName(p.name);
+    setDesc(p.description);
+    setPrice(p.price.toString());
+    setDiscount(p.discount?.toString() || '');
+    setSelectedColors(p.colors || []);
+    setSelectedSizes(p.sizes || []);
+    setCategory(p.category);
+    setImageUrl(p.imageUrl);
+    setIsArchived(p.isArchived ?? false);
+    setIsAvailable(p.isAvailable ?? true);
+    setShowInSpecialOffers(p.showInSpecialOffers ?? false);
+    setIsPinned(p.isPinned ?? false);
+    setOfferDurationHours('');
+  };
+
+  const handleClear = () => {
+    setEditingId(null);
+    setName(''); setDesc(''); setPrice(''); setDiscount(''); setSelectedColors([]); setSelectedSizes([]); setCategory(''); setImageUrl('');
+    setIsArchived(false); setIsAvailable(true); setShowInSpecialOffers(false); setIsPinned(false); setOfferDurationHours('');
+  };
 
   const handleAddCat = () => {
     if (newCat.trim()) {
@@ -173,23 +217,48 @@ const ManageProducts = () => {
     }
   };
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let endT;
+    if (offerDurationHours) {
+        const hours = parseFloat(offerDurationHours);
+        if (hours > 0) {
+            endT = new Date(Date.now() + hours * 3600000).toISOString();
+        }
+    }
+    // retain old if editing and not setting a new time
+    if (editingId && !endT) {
+      const existingP = products.find(p => p.id === editingId);
+      endT = existingP?.offerEndTime;
+    }
+
     const p: Product = {
-      id: Date.now().toString(),
+      id: editingId || Date.now().toString(),
       name,
       description: desc,
       price: parseFloat(price) || 0,
       discount: parseFloat(discount) || 0,
-      colors: colors.split(',').map(c => c.trim()).filter(Boolean),
+      colors: selectedColors,
       sizes: selectedSizes,
       category,
-      imageUrl
+      imageUrl,
+      isArchived,
+      isAvailable,
+      showInSpecialOffers,
+      isPinned,
+      offerEndTime: endT,
+      views: editingId ? products.find(x => x.id === editingId)?.views || 0 : 0
     };
     store.saveProduct(p);
-    setProducts([...products, p]);
-    // Reset
-    setName(''); setDesc(''); setPrice(''); setDiscount(''); setColors(''); setSelectedSizes([]); setImageUrl('');
+    
+    if (editingId) {
+      setProducts(products.map(px => px.id === editingId ? p : px));
+    } else {
+      setProducts([...products, p]);
+    }
+    
+    handleClear();
   };
 
   const handleDelete = (id: string) => {
@@ -200,15 +269,60 @@ const ManageProducts = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
       <div>
-        <h2 className="text-xl font-bold mb-6 border-b border-white/10 pb-2">إضافة صنف جديد</h2>
-        <form onSubmit={handleAddProduct} className="space-y-4">
+        <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-2">
+          <h2 className="text-xl font-bold">{editingId ? 'تعديل الصنف' : 'إضافة صنف جديد'}</h2>
+          {editingId && <button onClick={handleClear} className="text-sm text-gray-400 hover:text-white px-3 py-1 bg-white/5 rounded-full">إلغاء التعديل</button>}
+        </div>
+        <form onSubmit={handleSaveProduct} className="space-y-4">
           <input required placeholder="اسم الصنف" value={name} onChange={e=>setName(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" />
           <textarea required placeholder="وصف الصنف" value={desc} onChange={e=>setDesc(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 min-h-[100px] focus:outline-none focus:border-white/30" />
           <div className="flex gap-4">
             <input required type="number" step="0.01" placeholder="السعر الأساسي (ج.م)" value={price} onChange={e=>setPrice(e.target.value)} className="w-1/2 bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
             <input type="number" placeholder="نسبة الخصم % (اختياري)" value={discount} onChange={e=>setDiscount(e.target.value)} className="w-1/2 bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
           </div>
-          <input placeholder="الألوان المتاحة (افصل بينها بفاصلة , )" value={colors} onChange={e=>setColors(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" />
+          
+          <div className="bg-white/5 p-4 rounded-lg border border-white/10 space-y-3">
+             <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={isAvailable} onChange={e=>setIsAvailable(e.target.checked)} className="rounded border-white/20 w-4 h-4 accent-green-500" />
+                <span className={isAvailable ? "text-green-400" : "text-gray-400"}>الصنف متاح للبيع (Available)</span>
+             </label>
+             <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={isArchived} onChange={e=>setIsArchived(e.target.checked)} className="rounded border-white/20 w-4 h-4 accent-[#ff4444]" />
+                <span className={isArchived ? "text-red-400" : "text-gray-400"}>أرشفة الصنف (إخفاء عن المستخدمين)</span>
+             </label>
+             <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={showInSpecialOffers} onChange={e=>setShowInSpecialOffers(e.target.checked)} className="rounded border-white/20 w-4 h-4 accent-purple-500" />
+                <span className={showInSpecialOffers ? "text-purple-400" : "text-gray-400"}>أضف إلى شريط عروض خاصة</span>
+             </label>
+             <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={isPinned} onChange={e=>setIsPinned(e.target.checked)} className="rounded border-white/20 w-4 h-4 accent-blue-500" />
+                <span className={isPinned ? "text-blue-400" : "text-gray-400"}>تثبيت الصنف (يظهر في أول القسم)</span>
+             </label>
+             <div>
+                <input type="number" placeholder="عرض لفترة محددة (بالساعات) - اتركها فارغة للإلغاء" value={offerDurationHours} onChange={e=>setOfferDurationHours(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm focus:outline-none focus:border-white/30" dir="ltr" />
+                <p className="text-xs text-gray-400 mt-1">سيتم بدء العد التنازلي من وقت الحفظ. بمجرد انتهاء الوقت ينتهي العرض وتلقائياً.</p>
+             </div>
+          </div>
+
+          <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+            <label className="block text-sm text-gray-400 mb-3">الألوان المتاحة</label>
+            <div className="flex flex-wrap gap-3">
+              {PREDEFINED_COLORS.map(c => (
+                <button
+                  key={c.name}
+                  type="button"
+                  onClick={() => setSelectedColors(prev => prev.includes(c.name) ? prev.filter(x => x !== c.name) : [...prev, c.name])}
+                  className={cn(
+                    "w-8 h-8 rounded-full border-2 transition-transform relative group",
+                    selectedColors.includes(c.name) ? "border-green-400 scale-110" : "border-white/10 hover:border-white/30"
+                  )}
+                  style={{ backgroundColor: c.hex }}
+                >
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">{c.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           
           <div className="bg-white/5 p-4 rounded-lg border border-white/10">
             <label className="block text-sm text-gray-400 mb-3">المقاسات المتاحة</label>
@@ -219,7 +333,7 @@ const ManageProducts = () => {
                     type="checkbox" 
                     checked={selectedSizes.includes(s)} 
                     onChange={() => setSelectedSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])} 
-                    className="rounded border-white/20 bg-black/50 w-4 h-4 accent-[#ff4444]" 
+                    className="rounded border-white/20 bg-black/50 w-4 h-4 accent-indigo-500" 
                   />
                   <span>{s}</span>
                 </label>
@@ -257,21 +371,27 @@ const ManageProducts = () => {
             {imageUrl && <img src={imageUrl} alt="preview" className="mt-3 h-24 rounded-lg object-cover border border-white/10" />}
           </div>
           
-          <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-gray-200 mt-4 transition-colors">إضافة الصنف</button>
+          <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-gray-200 mt-4 transition-colors">
+             {editingId ? 'حفظ التعديلات' : 'إضافة الصنف'}
+          </button>
         </form>
       </div>
 
       <div>
         <h2 className="text-xl font-bold mb-6 border-b border-white/10 pb-2">الأصناف الحالية ({products.length})</h2>
-        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+        <div className="space-y-4 max-h-[1200px] overflow-y-auto pr-2">
            {products.map(p => (
-             <div key={p.id} className="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 items-center">
+             <div key={p.id} className="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 items-center relative overflow-hidden group">
+               {p.isArchived && <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-none z-10 font-bold text-red-500 tracking-widest bg-[url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAKrVq36zwjjgzhhYWGMYAEYB8RmROaABADeOQ8CXl/xfgAAAABJRU5ErkJggg==)]">مؤرشف</div>}
                <img src={p.imageUrl} alt={p.name} className="w-16 h-16 object-cover rounded-md" />
-               <div className="flex-1">
-                 <h4 className="font-bold truncate text-base">{p.name}</h4>
+               <div className="flex-1 z-20">
+                 <h4 className="font-bold truncate text-base">{p.name} {!p.isAvailable && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full mr-2">مغلق</span>}</h4>
                  <div className="text-sm text-gray-400">{p.price} ج.م {p.discount > 0 && <span className="text-[#ff4444] mr-2">(-{p.discount}%)</span>}</div>
                </div>
-               <button onClick={() => handleDelete(p.id)} className="p-3 bg-white/5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors"><Trash2 size={20}/></button>
+               <div className="flex flex-col gap-1 z-20">
+                 <button onClick={() => handleEdit(p)} className="p-2 bg-white/10 text-white rounded-lg hover:bg-indigo-500 transition-colors text-xs text-center">تعديل</button>
+                 <button onClick={() => handleDelete(p.id)} className="p-2 bg-white/10 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors text-xs text-center"><Trash2 size={16}/></button>
+               </div>
              </div>
            ))}
            {products.length === 0 && <div className="text-gray-500 text-center py-8">لا توجد أصناف</div>}
@@ -282,11 +402,20 @@ const ManageProducts = () => {
 };
 
 const ManageSettings = () => {
-  const [settings, setSettings] = useState<AppSettings>(store.getSettings());
+  const [settings, setSettings] = useState<AppSettings>({
+    ...store.getSettings(),
+    socialLinks: store.getSettings().socialLinks || { phone: '', instagram: '', facebook: '', telegram: '' }
+  });
 
   const handleChange = (k: keyof AppSettings, v: string) => {
-    const s = { ...settings, [k]: v };
-    setSettings(s);
+    setSettings(prev => ({ ...prev, [k]: v }));
+  };
+  
+  const handleSocialChange = (k: keyof NonNullable<AppSettings['socialLinks']>, v: string) => {
+    setSettings(prev => ({ 
+      ...prev, 
+      socialLinks: { ...(prev.socialLinks || {}), [k]: v } 
+    }));
   };
 
   const handleSave = () => {
@@ -324,22 +453,42 @@ const ManageSettings = () => {
         </div>
         {settings.bannerImage && <img src={settings.bannerImage} alt="Preview" className="mt-4 h-40 w-full object-cover rounded-xl border border-white/10 opacity-80" />}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm text-gray-400 mb-2">رقم واتساب للتواصل</label>
-          <input value={settings.whatsappNumber} onChange={e=>handleChange('whatsappNumber', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
+      <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+        <h3 className="font-bold mb-4 border-b border-white/10 pb-2">طرق الدفع</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">رقم المحفظة الإلكترونية</label>
+            <input value={settings.walletNumber} onChange={e=>handleChange('walletNumber', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">عنوان إنستا باي (InstaPay)</label>
+            <input value={settings.instapayHandle} onChange={e=>handleChange('instapayHandle', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">رقم حساب فوري</label>
+            <input value={settings.fawryNumber} onChange={e=>handleChange('fawryNumber', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm text-gray-400 mb-2">رقم المحفظة الإلكترونية</label>
-          <input value={settings.walletNumber} onChange={e=>handleChange('walletNumber', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-400 mb-2">عنوان إنستا باي (InstaPay)</label>
-          <input value={settings.instapayHandle} onChange={e=>handleChange('instapayHandle', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-400 mb-2">رقم حساب فوري</label>
-          <input value={settings.fawryNumber} onChange={e=>handleChange('fawryNumber', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
+      </div>
+      <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+        <h3 className="font-bold mb-4 border-b border-white/10 pb-2">روابط التواصل وإعدادات الواجهة</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">رقم الهاتف للاتصال / الواتساب</label>
+            <input value={settings.socialLinks?.phone || settings.whatsappNumber} onChange={e=>{handleChange('whatsappNumber', e.target.value); handleSocialChange('phone', e.target.value);}} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">رابط الانستجرام</label>
+            <input value={settings.socialLinks?.instagram || ''} onChange={e=>handleSocialChange('instagram', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" placeholder="https://instagram.com/..." />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">رابط الفيس بوك</label>
+            <input value={settings.socialLinks?.facebook || ''} onChange={e=>handleSocialChange('facebook', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" placeholder="https://facebook.com/..." />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">رابط التليجرام</label>
+            <input value={settings.socialLinks?.telegram || ''} onChange={e=>handleSocialChange('telegram', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" placeholder="https://t.me/..." />
+          </div>
         </div>
       </div>
       <button onClick={handleSave} className="bg-white text-black font-bold px-8 py-3 rounded-lg hover:bg-gray-200 transition-colors mt-6">حفظ الإعدادات</button>
