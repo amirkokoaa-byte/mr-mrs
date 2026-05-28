@@ -1,0 +1,6 @@
+{
+  "name": "Mr & Mrs Fashion",
+  "description": "استور احترافي للملابس مع لوحة تحكم ودعم للمدفوعات",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
