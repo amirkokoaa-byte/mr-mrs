@@ -17,6 +17,7 @@ export interface Product {
   sizes: string[];
   category: string;
   imageUrl: string;
+  images?: string[];
   reviews?: Review[];
   isArchived?: boolean;
   isAvailable?: boolean;
@@ -52,6 +53,13 @@ export interface AppSettings {
     facebook?: string;
     telegram?: string;
   };
+  branches?: {
+    id: string;
+    name: string;
+    address: string;
+    phone: string;
+    mapLink: string;
+  }[];
 }
 
 export interface AiOrder {

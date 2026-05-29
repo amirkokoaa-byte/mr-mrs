@@ -34,7 +34,7 @@ export const ProductCard = ({
           src={product.imageUrl} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1558769132-cb1fac08b045?w=500&auto=format&fit=crop'; }}
+          onError={(e) => { e.currentTarget.src = 'https://placehold.co/400x400?text=Facebook+Link'; }}
         />
         {/* Discount Badge */}
         {product.discount > 0 && (

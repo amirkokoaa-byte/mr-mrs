@@ -29,7 +29,12 @@ export const ProductDetails = ({
   const [reviewText, setReviewText] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewImage, setReviewImage] = useState('');
-  
+  const [selectedMainImage, setSelectedMainImage] = useState(product.imageUrl);
+
+  useEffect(() => {
+    setSelectedMainImage(product.imageUrl);
+  }, [product.imageUrl]);
+
   const [timeLeft, setTimeLeft] = useState<{ hours: number, mins: number, secs: number } | null>(null);
 
   const PREDEFINED_COLORS = [
@@ -130,29 +135,45 @@ export const ProductDetails = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-[#2d2d2d] p-6 md:p-12 rounded-2xl border border-white/5">
           {/* Image */}
-          <div className="relative rounded-xl overflow-hidden bg-[#3d3d3d] border border-white/5 aspect-square">
-            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-            
-            <div className="absolute top-[10px] left-[10px] bg-black/60 rounded-lg p-2 z-10 shadow-md flex flex-col items-center justify-center min-w-[50px] backdrop-blur-sm border border-white/10">
-              <Eye size={18} className="text-gray-300 mb-1" />
-              <span className="text-white text-xs font-bold font-mono">{product.views || 0}</span>
-            </div>
-
-            {product.discount > 0 && !isOfferEnded && (
-              <div className="absolute top-[10px] right-[10px] bg-[#ff4444] text-white px-3 py-1 font-bold rounded-[4px] text-lg z-10 shadow-md">
-                خصم {product.discount}%
+          <div className="flex flex-col gap-3">
+            <div className="relative rounded-xl overflow-hidden bg-[#3d3d3d] border border-white/5 aspect-square">
+              <img src={selectedMainImage} alt={product.name} className="w-full h-full object-cover" onError={e => e.currentTarget.src = 'https://placehold.co/800x800?text=Facebook+Link'} />
+              
+              <div className="absolute top-[10px] left-[10px] bg-black/60 rounded-lg p-2 z-10 shadow-md flex flex-col items-center justify-center min-w-[50px] backdrop-blur-sm border border-white/10">
+                <Eye size={18} className="text-gray-300 mb-1" />
+                <span className="text-white text-xs font-bold font-mono">{product.views || 0}</span>
               </div>
-            )}
+
+              {product.discount > 0 && !isOfferEnded && (
+                <div className="absolute top-[10px] right-[10px] bg-[#ff4444] text-white px-3 py-1 font-bold rounded-[4px] text-lg z-10 shadow-md">
+                  خصم {product.discount}%
+                </div>
+              )}
+              
+              <button 
+                onClick={(e) => onLikeToggle(e, product)}
+                className="absolute bottom-[10px] right-[10px] bg-black/40 p-3 rounded-full hover:bg-black/60 z-10 transition-colors shadow-lg border border-white/10"
+              >
+                <Heart size={28} className={isLiked ? "fill-[#ff4444] text-[#ff4444]" : "text-gray-300"} />
+              </button>
+              <button onClick={handleShare} className="absolute bottom-[10px] right-[60px] bg-black/40 p-3 rounded-full hover:bg-black/60 z-10 transition-colors shadow-lg text-gray-300 hover:text-white border border-white/10">
+                <Share2 size={24} />
+              </button>
+            </div>
             
-            <button 
-              onClick={(e) => onLikeToggle(e, product)}
-              className="absolute bottom-[10px] right-[10px] bg-black/40 p-3 rounded-full hover:bg-black/60 z-10 transition-colors shadow-lg border border-white/10"
-            >
-              <Heart size={28} className={isLiked ? "fill-[#ff4444] text-[#ff4444]" : "text-gray-300"} />
-            </button>
-            <button onClick={handleShare} className="absolute bottom-[10px] right-[60px] bg-black/40 p-3 rounded-full hover:bg-black/60 z-10 transition-colors shadow-lg text-gray-300 hover:text-white border border-white/10">
-              <Share2 size={24} />
-            </button>
+            {/* Gallery Thumbnails */}
+            {product.images && product.images.length > 0 && (
+               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  <button onClick={() => setSelectedMainImage(product.imageUrl)} className={cn("w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors", selectedMainImage === product.imageUrl ? "border-[#ff4444]" : "border-transparent opacity-60 hover:opacity-100")}>
+                     <img src={product.imageUrl} className="w-full h-full object-cover bg-[#3d3d3d]" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
+                  </button>
+                  {product.images.map((img, idx) => (
+                    <button key={idx} onClick={() => setSelectedMainImage(img)} className={cn("w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors", selectedMainImage === img ? "border-[#ff4444]" : "border-transparent opacity-60 hover:opacity-100")}>
+                       <img src={img} className="w-full h-full object-cover bg-[#3d3d3d]" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
+                    </button>
+                  ))}
+               </div>
+            )}
           </div>
 
           {/* Details */}
@@ -294,7 +315,7 @@ export const ProductDetails = ({
                 {similarProducts.map((p) => (
                   <div key={p.id} onClick={() => onProductClick(p)} className="bg-[#2d2d2d] rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform border border-white/5 relative group">
                      <div className="aspect-[4/5] relative w-full overflow-hidden bg-[#1a1a1a]">
-                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => e.currentTarget.src = 'https://placehold.co/400x400?text=Facebook+Link'} />
                         {p.discount > 0 && <span className="absolute top-2 right-2 bg-[#ff4444] text-white text-[10px] font-bold px-2 py-1 z-10 rounded shadow-md">-{p.discount}%</span>}
                      </div>
                      <div className="p-3">

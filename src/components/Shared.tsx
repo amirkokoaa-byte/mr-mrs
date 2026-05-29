@@ -21,6 +21,8 @@ export const Header = ({
   const [time, setTime] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [isBranchesOpen, setIsBranchesOpen] = useState(false);
+
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -80,10 +82,12 @@ export const Header = ({
 
         {/* Actions Navigation */}
         <div className="flex items-center gap-4 md:gap-6">
-          <button className="hover:text-gray-300 relative group hidden sm:block" onClick={() => alert('سيتم عرض فروعنا على الخريطة هنا')}>
-             <MapPin size={24} />
-             <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-[#2d2d2d] border border-white/5 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">فروعنا</span>
-          </button>
+          {settings?.branches && settings.branches.length > 0 && (
+            <button className="hover:text-gray-300 relative group hidden sm:block" onClick={() => setIsBranchesOpen(true)}>
+               <MapPin size={24} />
+               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-[#2d2d2d] border border-white/5 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">فروعنا</span>
+            </button>
+          )}
           
           <button onClick={onOpenCart} className="relative hover:text-gray-300 group">
             <ShoppingCart size={24} />
@@ -120,6 +124,57 @@ export const Header = ({
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {isBranchesOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#1a1a1a] rounded-2xl w-full max-w-lg border border-white/10 shadow-2xl overflow-hidden"
+            >
+              <div className="flex justify-between items-center p-4 border-b border-white/10 bg-[#2d2d2d]">
+                <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+                  <MapPin size={20} className="text-indigo-400" />
+                  فروعنا
+                </h2>
+                <button onClick={() => setIsBranchesOpen(false)} className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full"><X size={24}/></button>
+              </div>
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                {settings?.branches?.map((branch: any) => (
+                  <div key={branch.id} className="bg-black/40 border border-white/5 rounded-xl p-4 flex flex-col gap-3">
+                    <h3 className="font-bold text-lg text-indigo-300">{branch.name}</h3>
+                    
+                    {branch.address && (
+                      <div className="flex items-start gap-3 text-sm text-gray-300 group">
+                        <MapPin size={16} className="mt-1 flex-shrink-0" />
+                        <span className="flex-1">{branch.address}</span>
+                        <button onClick={() => { navigator.clipboard.writeText(branch.address); alert('تم النسخ'); }} className="opacity-0 group-hover:opacity-100 text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-opacity">نسخ</button>
+                      </div>
+                    )}
+                    
+                    {branch.phone && (
+                      <div className="flex items-center gap-3 text-sm text-gray-300 group">
+                        <Phone size={16} className="flex-shrink-0" />
+                        <span className="flex-1" dir="ltr">{branch.phone}</span>
+                        <button onClick={() => { navigator.clipboard.writeText(branch.phone); alert('تم النسخ'); }} className="opacity-0 group-hover:opacity-100 text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-opacity">نسخ</button>
+                      </div>
+                    )}
+                    
+                    {branch.mapLink && (
+                      <a href={branch.mapLink} target="_blank" rel="noopener noreferrer" className="mt-2 text-xs bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg inline-flex items-center justify-center gap-2 transition-colors w-full sm:w-auto self-start">
+                        <MapPin size={14} />
+                        عرض على الخريطة
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
@@ -164,9 +219,6 @@ export const WhatsAppButton = ({ number }: { number: string }) => {
       <a href={url} target="_blank" rel="noopener noreferrer" className="fixed bottom-5 left-5 bg-[#25d366] text-white w-[50px] h-[50px] flex items-center justify-center rounded-full shadow-[0_10px_20px_rgba(0,0,0,0.3)] hover:scale-110 transition-transform z-[100]">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>
       </a>
-      <button onClick={() => alert('خدمة العملاء عبر الدردشة المباشرة متوفرة قريباً')} className="fixed bottom-24 left-5 bg-[#2d2d2d] border border-white/10 text-white w-[50px] h-[50px] flex items-center justify-center rounded-full shadow-[0_10px_20px_rgba(0,0,0,0.3)] hover:scale-110 transition-transform z-[100] group">
-        <MessageCircle size={24} />
-      </button>
     </>
   );
 }

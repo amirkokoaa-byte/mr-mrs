@@ -197,7 +197,7 @@ export default function App() {
         )}
       </main>
 
-      <Footer />
+      <Footer settings={settings} />
       <WhatsAppButton number={settings.whatsappNumber} />
 
       <AuthModal 

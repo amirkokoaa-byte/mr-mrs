@@ -159,6 +159,7 @@ const ManageProducts = () => {
   const [category, setCategory] = useState('');
   const [newCat, setNewCat] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   
   const [isArchived, setIsArchived] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
@@ -184,6 +185,7 @@ const ManageProducts = () => {
     setSelectedSizes(p.sizes || []);
     setCategory(p.category);
     setImageUrl(p.imageUrl);
+    setImages(p.images || []);
     setIsArchived(p.isArchived ?? false);
     setIsAvailable(p.isAvailable ?? true);
     setShowInSpecialOffers(p.showInSpecialOffers ?? false);
@@ -194,7 +196,7 @@ const ManageProducts = () => {
 
   const handleClear = () => {
     setEditingId(null);
-    setName(''); setDesc(''); setPrice(''); setDiscount(''); setSelectedColors([]); setSelectedSizes([]); setCategory(''); setImageUrl('');
+    setName(''); setDesc(''); setPrice(''); setDiscount(''); setSelectedColors([]); setSelectedSizes([]); setCategory(''); setImageUrl(''); setImages([]);
     setIsArchived(false); setIsAvailable(true); setShowInSpecialOffers(false); setIsPinned(false); setOfferDurationHours(''); setShippingCost('');
   };
 
@@ -217,6 +219,28 @@ const ManageProducts = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleMultipleImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    // limit to 5
+    const allowedFiles = files.slice(0, 5 - images.length);
+    if (allowedFiles.length === 0) {
+        alert('يمكن رفع 5 صور كحد أقصى للمنتج الواحد.');
+        return;
+    }
+
+    Promise.all(allowedFiles.map(file => {
+        return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+        });
+    })).then(base64Images => {
+        setImages(prev => [...prev, ...base64Images]);
+    });
   };
 
   const handleSaveProduct = (e: React.FormEvent) => {
@@ -245,6 +269,7 @@ const ManageProducts = () => {
       sizes: selectedSizes,
       category,
       imageUrl,
+      images,
       isArchived,
       isAvailable,
       showInSpecialOffers,
@@ -265,8 +290,10 @@ const ManageProducts = () => {
   };
 
   const handleDelete = (id: string) => {
-    store.deleteProduct(id);
-    setProducts(products.filter(p => p.id !== id));
+    if (window.confirm("هل أنت متأكد من رغبتك في حذف هذا المنتج؟")) {
+      store.deleteProduct(id);
+      setProducts(products.filter(p => p.id !== id));
+    }
   };
 
   return (
@@ -363,16 +390,53 @@ const ManageProducts = () => {
           </div>
           
           <div>
-            <label className="block text-sm text-gray-400 mb-2">صورة المنتج (رابط أو رفع من الجهاز)</label>
+            <label className="block text-sm text-gray-400 mb-2">صور المنتج (حتى 6 صور: الرئيسية + 5 إضافية)</label>
+            <div className="flex gap-2 mb-2">
+              <input required={!imageUrl && images.length === 0} placeholder="رابط مباشر / رابط بوست فيس بوك" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} className="flex-1 bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30 text-sm" dir="ltr" />
+              <button 
+                type="button"
+                onClick={() => {
+                  if (imageUrl && images.length < 5) {
+                    setImages([...images, imageUrl]);
+                    setImageUrl('');
+                  } else if (images.length >= 5) {
+                    alert('الحد الأقصى 5 صور إضافية.');
+                  }
+                }}
+                className="bg-indigo-500 hover:bg-indigo-600 px-4 rounded-lg text-white transition-colors"
+              >
+                إضافة كصورة إضافية
+              </button>
+            </div>
             <div className="flex gap-2">
-              <input required placeholder="رابط صورة الصنف (URL)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} className="flex-1 bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
-              <label className="bg-white/10 flex items-center justify-center gap-2 px-4 rounded-lg cursor-pointer hover:bg-white/20 transition-colors font-medium">
+              <label className="flex-1 bg-white/10 flex items-center justify-center gap-2 py-3 rounded-lg cursor-pointer hover:bg-white/20 transition-colors font-medium text-sm">
                 <Upload size={18} />
-                رفع
+                رفع الصورة الرئيسية
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, setImageUrl)} />
               </label>
+              <label className="flex-1 bg-white/10 flex items-center justify-center gap-2 py-3 rounded-lg cursor-pointer hover:bg-white/20 transition-colors font-medium text-sm">
+                <Upload size={18} />
+                رفع صور إضافية (تحديد متعدد)
+                <input type="file" accept="image/*" multiple className="hidden" onChange={handleMultipleImagesUpload} />
+              </label>
             </div>
-            {imageUrl && <img src={imageUrl} alt="preview" className="mt-3 h-24 rounded-lg object-cover border border-white/10" />}
+
+            {/* Previews */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {imageUrl && (
+                <div className="relative group">
+                   <img src={imageUrl} alt="preview main" className="h-20 w-20 rounded-lg object-cover border border-white/10" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
+                   <span className="absolute -top-2 -right-2 bg-indigo-500 text-[10px] px-1 rounded">رئيسية</span>
+                   <button type="button" onClick={() => setImageUrl('')} className="absolute top-1 right-1 p-1 bg-red-500/80 rounded-full opacity-0 group-hover:opacity-100"><Trash2 size={12} /></button>
+                </div>
+              )}
+              {images.map((img, idx) => (
+                <div key={idx} className="relative group">
+                   <img src={img} alt={`preview ${idx}`} className="h-20 w-20 rounded-lg object-cover border border-white/10" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
+                   <button type="button" onClick={() => setImages(images.filter((_, i) => i !== idx))} className="absolute top-1 right-1 p-1 bg-red-500/80 rounded-full opacity-0 group-hover:opacity-100"><Trash2 size={12} /></button>
+                </div>
+              ))}
+            </div>
           </div>
           
           <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-gray-200 mt-4 transition-colors">
@@ -387,7 +451,7 @@ const ManageProducts = () => {
            {products.map(p => (
              <div key={p.id} className="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 items-center relative overflow-hidden group">
                {p.isArchived && <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-none z-10 font-bold text-red-500 tracking-widest bg-[url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAKrVq36zwjjgzhhYWGMYAEYB8RmROaABADeOQ8CXl/xfgAAAABJRU5ErkJggg==)]">مؤرشف</div>}
-               <img src={p.imageUrl} alt={p.name} className="w-16 h-16 object-cover rounded-md" />
+               <img src={p.imageUrl} alt={p.name} className="w-16 h-16 object-cover rounded-md" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=FB+Link'} />
                <div className="flex-1 z-20">
                  <h4 className="font-bold truncate text-base">{p.name} {!p.isAvailable && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full mr-2">مغلق</span>}</h4>
                  <div className="text-sm text-gray-400">{p.price} ج.م {p.discount > 0 && <span className="text-[#ff4444] mr-2">(-{p.discount}%)</span>}</div>
@@ -419,6 +483,27 @@ const ManageSettings = () => {
     setSettings(prev => ({ 
       ...prev, 
       socialLinks: { ...(prev.socialLinks || {}), [k]: v } 
+    }));
+  };
+
+  const handleAddBranch = () => {
+    setSettings(prev => ({
+      ...prev,
+      branches: [...(prev.branches || []), { id: Date.now().toString(), name: '', address: '', phone: '', mapLink: '' }]
+    }));
+  };
+
+  const handleUpdateBranch = (id: string, field: string, value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      branches: prev.branches?.map(b => b.id === id ? { ...b, [field]: value } : b)
+    }));
+  };
+
+  const handleDeleteBranch = (id: string) => {
+    setSettings(prev => ({
+      ...prev,
+      branches: prev.branches?.filter(b => b.id !== id)
     }));
   };
 
@@ -495,6 +580,46 @@ const ManageSettings = () => {
           </div>
         </div>
       </div>
+
+      <div className="bg-white/5 p-4 rounded-xl border border-white/10 mt-6">
+        <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+          <h3 className="font-bold">فروعنا</h3>
+          <button onClick={handleAddBranch} className="p-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-white transition-colors flex items-center gap-2 text-xs">
+            <Plus size={14} /> إضافة فرع
+          </button>
+        </div>
+        <div className="space-y-4">
+          {(settings.branches || []).map((branch) => (
+            <div key={branch.id} className="p-4 bg-black/40 rounded-lg border border-white/10 relative group">
+              <button onClick={() => handleDeleteBranch(branch.id)} className="absolute top-2 left-2 p-2 text-gray-400 hover:text-red-500 bg-white/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                <Trash2 size={16} />
+              </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">اسم الفرع</label>
+                  <input value={branch.name} onChange={e=>handleUpdateBranch(branch.id, 'name', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded p-2 focus:outline-none focus:border-white/30 text-sm" placeholder="مثال: فرع مدينة نصر" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">رقم الهاتف للفرع</label>
+                  <input value={branch.phone} onChange={e=>handleUpdateBranch(branch.id, 'phone', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded p-2 focus:outline-none focus:border-white/30 text-sm" placeholder="رقم الهاتف" dir="ltr" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs text-gray-400 mb-1">العنوان التفصيلي</label>
+                  <input value={branch.address} onChange={e=>handleUpdateBranch(branch.id, 'address', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded p-2 focus:outline-none focus:border-white/30 text-sm" placeholder="العنوان" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs text-gray-400 mb-1">رابط جوجل ماب (Location)</label>
+                  <input value={branch.mapLink} onChange={e=>handleUpdateBranch(branch.id, 'mapLink', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded p-2 focus:outline-none focus:border-white/30 text-sm" placeholder="https://maps.google.com/..." dir="ltr" />
+                </div>
+              </div>
+            </div>
+          ))}
+          {(!settings.branches || settings.branches.length === 0) && (
+            <p className="text-gray-500 text-sm text-center py-4">لم يتم إضافة فروع بعد.</p>
+          )}
+        </div>
+      </div>
+
       <button onClick={handleSave} className="bg-white text-black font-bold px-8 py-3 rounded-lg hover:bg-gray-200 transition-colors mt-6">حفظ الإعدادات</button>
     </div>
   );

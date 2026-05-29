@@ -27,33 +27,48 @@ async function startServer() {
   app.post("/api/chat", async (req, res) => {
     try {
       if (!ai) {
-        return res.status(500).json({ reply: "Gemini API key is not configured on the server." });
+        return res.status(500).json({ reply: "عفواً، مفتاح Gemini API غير مهيأ في الخادم." });
       }
 
-      const { prompt, storeData } = req.body;
+      const { prompt, history, storeData } = req.body;
 
       // Provide system context about exactly what the store has
       const systemInstruction = `
-        You are an AI assistant for this e-commerce app. 
-        Your goal is to answer user questions about the products, offers, policies, or the website.
-        You must look at the store data provided to give accurate, truthful answers. Do not make up products or fake offers.
-        Store data context: ${JSON.stringify(storeData)}
-        Be friendly, concise, and helpful. Use Arabic language as the main language.
+        أنت مساعد ذكي احترافي لمتجر إلكتروني. هدفك هو مساعدة المستخدمين والإجابة على استفساراتهم بناءً على بيانات المتجر المرفقة فقط.
+        بيانات المتجر والمنتجات المتوفرة: ${JSON.stringify(storeData)}
+        تعليمات هامة جداً:
+        1. لا تخترع أي منتجات أو أسعار أو سياسات من عندك. التزم فقط بما هو موجود في بيانات المتجر.
+        2. إذا لم يكن المنتج موجوداً، اعتذر بلطافة وأخبر العميل بذلك، واقترح عليه تصفح بقية الأقسام.
+        3. إجاباتك يجب أن تكون قصيرة، مهذبة، واضحة بلهجة مصرية أو عربية فصحى جذابة وبسيطة ومباشرة لتجنب الحشو.
+        4. لا تكرر إجاباتك بشكل عشوائي وافهم السياق من المحادثة السابقة.
       `;
+
+      const contents = [];
+      if (history && Array.isArray(history)) {
+        history.forEach((msg: any) => {
+          if (msg.sender === 'user' || msg.sender === 'bot') {
+            contents.push({
+              role: msg.sender === 'user' ? 'user' : 'model',
+              parts: [{ text: msg.text || "مرحباً" }]
+            });
+          }
+        });
+      }
+      contents.push({ role: 'user', parts: [{ text: prompt }] });
 
       const response = await ai.models.generateContent({
         model: "gemini-3.5-flash",
-        contents: prompt,
+        contents,
         config: {
           systemInstruction,
-          temperature: 0.2, // low temp for accurate facts
+          temperature: 0.1, // very low temp for factual responses
         },
       });
 
       res.json({ reply: response.text });
     } catch (error) {
       console.error("Gemini Error:", error);
-      res.status(500).json({ reply: "عذراً، حدث خطأ في التواصل مع الخادم." });
+      res.status(500).json({ reply: "عفواً، الخدمة غير متاحة حالياً بسبب ضغط على الخادم، يرجى المحاولة لاحقاً." });
     }
   });
 
