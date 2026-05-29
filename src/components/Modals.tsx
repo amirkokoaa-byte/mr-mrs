@@ -18,13 +18,16 @@ interface CartModalProps {
 export const CartModal = ({ isOpen, onClose, cart, products, onUpdateQuantity, onRemoveItem, onContinueShopping, onCheckout }: CartModalProps) => {
   if (!isOpen) return null;
 
-  const getProduct = (id: string) => products.find(p => p.id === id);
+  const items = products;
+  const getProduct = (id: string) => items.find(p => p.id === id);
   
+  const totalShipping = cart.reduce((sum, item) => sum + (getProduct(item.productId)?.shippingCost || 0) * item.quantity, 0);
+
   const total = cart.reduce((sum, item) => {
     const p = getProduct(item.productId);
     if (!p) return sum;
     return sum + (calculatePrice(p.price, p.discount) * item.quantity);
-  }, 0);
+  }, 0) + totalShipping;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
@@ -69,7 +72,13 @@ export const CartModal = ({ isOpen, onClose, cart, products, onUpdateQuantity, o
         </div>
 
         <div className="p-4 border-t border-white/10 bg-black/20">
-          <p className="mt-4 mb-4 text-sm text-gray-400 text-center">+ مصاريف الشحن حسب المحافظة</p>
+          {(() => {
+            return totalShipping > 0 ? (
+              <p className="mt-4 mb-4 text-sm text-[#ff4444] text-center font-bold">مصاريف الشحن: {totalShipping} ج.م</p>
+            ) : (
+              <p className="mt-4 mb-4 text-sm text-gray-400 text-center">+ مصاريف الشحن حسب المحافظة في حال عدم تحديدها</p>
+            );
+          })()}
           <div className="flex justify-between items-center mb-6 text-xl">
             <span className="text-gray-300">الإجمالي:</span>
             <span className="font-bold">{total.toFixed(2)} ج.م</span>

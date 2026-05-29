@@ -165,6 +165,7 @@ const ManageProducts = () => {
   const [showInSpecialOffers, setShowInSpecialOffers] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [offerDurationHours, setOfferDurationHours] = useState('');
+  const [shippingCost, setShippingCost] = useState('');
 
   const AVAILABLE_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'One Size'];
 
@@ -187,13 +188,14 @@ const ManageProducts = () => {
     setIsAvailable(p.isAvailable ?? true);
     setShowInSpecialOffers(p.showInSpecialOffers ?? false);
     setIsPinned(p.isPinned ?? false);
+    setShippingCost(p.shippingCost ? String(p.shippingCost) : '');
     setOfferDurationHours('');
   };
 
   const handleClear = () => {
     setEditingId(null);
     setName(''); setDesc(''); setPrice(''); setDiscount(''); setSelectedColors([]); setSelectedSizes([]); setCategory(''); setImageUrl('');
-    setIsArchived(false); setIsAvailable(true); setShowInSpecialOffers(false); setIsPinned(false); setOfferDurationHours('');
+    setIsArchived(false); setIsAvailable(true); setShowInSpecialOffers(false); setIsPinned(false); setOfferDurationHours(''); setShippingCost('');
   };
 
   const handleAddCat = () => {
@@ -247,6 +249,7 @@ const ManageProducts = () => {
       isAvailable,
       showInSpecialOffers,
       isPinned,
+      shippingCost: shippingCost ? parseFloat(shippingCost) : 0,
       offerEndTime: endT,
       views: editingId ? products.find(x => x.id === editingId)?.views || 0 : 0
     };
@@ -280,6 +283,7 @@ const ManageProducts = () => {
             <input required type="number" step="0.01" placeholder="السعر الأساسي (ج.م)" value={price} onChange={e=>setPrice(e.target.value)} className="w-1/2 bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
             <input type="number" placeholder="نسبة الخصم % (اختياري)" value={discount} onChange={e=>setDiscount(e.target.value)} className="w-1/2 bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
           </div>
+          <input type="number" step="0.01" placeholder="مصاريف الشحن للصنف (ج.م) (اختياري)" value={shippingCost} onChange={e=>setShippingCost(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
           
           <div className="bg-white/5 p-4 rounded-lg border border-white/10 space-y-3">
              <label className="flex items-center gap-2 cursor-pointer">

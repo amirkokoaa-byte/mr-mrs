@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { store } from './store';
+import { initFirebaseSync, store } from './store';
 import { User, Product, CartItem, AppSettings } from './types';
 import { Header, Footer, WhatsAppButton } from './components/Shared';
 import { StoreFront } from './components/StoreFront';
@@ -30,6 +30,10 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    initFirebaseSync();
+  }, []);
 
   // Cross-tab auto sync for real-time appearance of changes
   useEffect(() => {

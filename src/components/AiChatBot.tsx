@@ -32,9 +32,9 @@ export const AiChatBot = ({ appName }: { appName: string }) => {
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       // Start flow
-      addBotMessage(`أهلاً بك في ${appName}! 🌸 يسعدنا جداً خدمتك. عشان نسجل طلبك فوراً، ممكن تقولي اسمك الكريم؟`);
+      addBotMessage(`أهلاً بك في ${appName}! 🌸 أنا المساعد الذكي، وتقدر تسألني عن أي منتجات، تفاصيل الشراء، أو عروضنا!`);
     }
-  }, [isOpen]);
+  }, [isOpen, appName, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -59,59 +59,38 @@ export const AiChatBot = ({ appName }: { appName: string }) => {
     }, 600);
   };
 
-  const processStep = (val: string) => {
-    let nextStep = step;
-    let newData = { ...orderData };
+  const processStep = async (val: string) => {
+    // Collect context data
+    const products = store.getProducts().map(p => ({
+        name: p.name,
+        price: p.price,
+        shipping: p.shippingCost,
+        colors: p.colors,
+        sizes: p.sizes,
+        description: p.description
+    }));
+    const settings = store.getSettings();
 
-    if (step === 0) {
-      newData.name = val;
-      nextStep = 1;
-      addBotMessage("تشرفنا يا فندم. إيه المنتج أو الموديل اللي حابب تطلبه النهاردة؟");
-    } else if (step === 1) {
-      newData.product = val;
-      nextStep = 2;
-      addBotMessage("اختيار رائع! 👌 عشان نتابع معاك الشحن، ممكن رقم تليفون متاح؟");
-    } else if (step === 2) {
-      if (!/^\d+$/.test(val.replace(/\s/g, ''))) {
-        addBotMessage("الرجاء إدخال رقم هاتف صحيح مكون من أرقام فقط.");
-        return;
-      }
-      newData.phone = val;
-      nextStep = 3;
-      addBotMessage("تمام جداً. ممكن عنوان الشحن بالتفصيل (المحافظة - المنطقة - اسم الشارع - رقم العمارة)؟ لمعرفة قيمة التوصيل، هتكون حسب المنطقة وهيتم التواصل لتوضيح ذلك.");
-    } else if (step === 3) {
-      newData.address = val;
-      nextStep = 4;
-      addBotMessage("تسلم. عشان المندوب يوصلك أسرع ومن غير تأخير، ياريت تبعتلي اللوكيشن (Location) المتاح لك أو عنوان مفصل أكثر هنا.");
-    } else if (step === 4) {
-      newData.locationText = val;
-      nextStep = 5;
-      
-      const summaryMsg = `شكراً ليك يا فندم! دي تفاصيل طلبك لتأكيدها:
-👤 الاسم: ${newData.name}
-🛍️ المنتج: ${newData.product}
-📱 رقم الهاتف: ${newData.phone}
-📍 العنوان: ${newData.address}
-🗺️ اللوكيشن: تم الاستلام
+    try {
+        const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                prompt: val,
+                storeData: { products, settings }
+            }),
+        });
+        
+        if (!res.ok) {
+            addBotMessage("عفواً، الخدمة غير متاحة حالياً بسبب خطأ في الخادم.");
+            return;
+        }
 
-تم تسجيل طلبك بنجاح، وفريق المبيعات هيتواصل معاك لتأكيد الشحن خلال ساعات. يومك سعيد! ✨`;
-      addBotMessage(summaryMsg);
-      
-      // Save order
-      const d = new Date();
-      const newOrder: AiOrder = {
-        id: Date.now().toString(),
-        date: d.toLocaleDateString('ar-EG'),
-        time: d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-        phone: newData.phone,
-        messages: [...messages, { sender: 'user', text: val }, { sender: 'bot', text: summaryMsg }],
-        summary: newData
-      };
-      store.saveAiOrder(newOrder);
+        const data = await res.json();
+        addBotMessage(data.reply);
+    } catch (err) {
+        addBotMessage("عفواً، لا أستطيع الاتصال بالخادم الآن.");
     }
-
-    setOrderData(newData);
-    setStep(nextStep);
   };
 
   return (
@@ -161,26 +140,10 @@ export const AiChatBot = ({ appName }: { appName: string }) => {
                   </div>
                 </div>
               ))}
-              {step === 5 && (
-                <div className="text-center mt-4">
-                  <button 
-                    onClick={() => {
-                      setStep(0);
-                      setMessages([]);
-                      setOrderData({ name: '', product: '', phone: '', address: '', locationText: '' });
-                      addBotMessage(`أهلاً بك في ${appName}! 🌸 يسعدنا جداً خدمتك. عشان نسجل طلبك فوراً، ممكن تقولي اسمك الكريم؟`);
-                    }}
-                    className="text-xs text-indigo-400 hover:text-indigo-300 underline"
-                  >
-                    بدء محادثة جديدة
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Input Form */}
-            {step < 5 && (
-              <form onSubmit={handleSend} className="p-3 bg-[#2d2d2d] border-t border-white/5 flex gap-2">
+            <form onSubmit={handleSend} className="p-3 bg-[#2d2d2d] border-t border-white/5 flex gap-2">
                 <input 
                   type="text" 
                   value={inputText}
@@ -196,7 +159,6 @@ export const AiChatBot = ({ appName }: { appName: string }) => {
                   <Send size={18} />
                 </button>
               </form>
-            )}
           </motion.div>
         )}
       </AnimatePresence>

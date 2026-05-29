@@ -1,4 +1,6 @@
 import { AppSettings, CartItem, Category, Product, User, AiOrder } from './types';
+import { db } from './firebase';
+import { collection, doc, onSnapshot, setDoc, deleteDoc, getDocs } from 'firebase/firestore';
 
 const defaultSettings: AppSettings = {
   appName: 'Mr & Mrs Fashion',
@@ -12,8 +14,12 @@ const defaultSettings: AppSettings = {
 
 // --- Helper Functions ---
 const getLocal = <T>(key: string, fallback: T): T => {
-  const item = localStorage.getItem(key);
-  return item ? JSON.parse(item) : fallback;
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : fallback;
+  } catch (e) {
+    return fallback;
+  }
 };
 
 const setLocal = <T>(key: string, value: T): void => {
@@ -23,13 +29,44 @@ const setLocal = <T>(key: string, value: T): void => {
   window.dispatchEvent(new Event('local-storage-sync'));
 };
 
+const FIREBASE_SYNC_KEY = 'firebase-sync-initialized';
+
+// Sync Firebase with LocalStorage
+export const initFirebaseSync = () => {
+   if (window[FIREBASE_SYNC_KEY as any]) return; // prevent dual init
+   (window as any)[FIREBASE_SYNC_KEY] = true;
+
+   onSnapshot(collection(db, 'products'), (snapshot) => {
+       const products = snapshot.docs.map(d => d.data() as Product);
+       if (products.length > 0) {
+           setLocal('products', products);
+       }
+   });
+
+   onSnapshot(doc(db, 'config', 'settings'), (docSnap) => {
+       if (docSnap.exists()) {
+           setLocal('settings', docSnap.data() as AppSettings);
+       }
+   });
+
+   onSnapshot(collection(db, 'categories'), (snapshot) => {
+       const categories = snapshot.docs.map(d => d.data() as Category);
+       if (categories.length > 0) {
+           setLocal('categories', categories);
+       }
+   });
+};
+
 // --- Store API ---
 export const store = {
   getSettings: () => getLocal<AppSettings>('settings', defaultSettings),
-  saveSettings: (settings: AppSettings) => setLocal('settings', settings),
+  saveSettings: async (settings: AppSettings) => {
+    setLocal('settings', settings);
+    try { await setDoc(doc(db, 'config', 'settings'), settings); } catch(e) {}
+  },
 
   getProducts: () => getLocal<Product[]>('products', []),
-  saveProduct: (product: Product) => {
+  saveProduct: async (product: Product) => {
     const products = store.getProducts();
     const existing = products.findIndex((p) => p.id === product.id);
     if (existing >= 0) {
@@ -38,31 +75,36 @@ export const store = {
       products.push(product);
     }
     setLocal('products', products);
+    try { await setDoc(doc(db, 'products', product.id), product); } catch(e) {}
   },
-  deleteProduct: (id: string) => {
+  deleteProduct: async (id: string) => {
     setLocal('products', store.getProducts().filter((p) => p.id !== id));
+    try { await deleteDoc(doc(db, 'products', id)); } catch(e) {}
   },
-  incrementProductView: (id: string) => {
+  incrementProductView: async (id: string) => {
     const products = store.getProducts();
     const existing = products.findIndex((p) => p.id === id);
     if (existing >= 0) {
-      products[existing] = {
+      const p = {
         ...products[existing],
         views: (products[existing].views || 0) + 1
       };
+      products[existing] = p;
       setLocal('products', products);
+      try { await setDoc(doc(db, 'products', p.id), p); } catch(e) {}
     }
   },
 
   getCategories: () => getLocal<Category[]>('categories', []),
-  saveCategory: (category: Category) => {
+  saveCategory: async (category: Category) => {
     const cats = store.getCategories();
     cats.push(category);
     setLocal('categories', cats);
+    try { await setDoc(doc(db, 'categories', category.id), category); } catch(e) {}
   },
 
   getUsers: () => getLocal<User[]>('users', []),
-  saveUser: (user: User) => {
+  saveUser: async (user: User) => {
     const users = store.getUsers();
     const existing = users.findIndex((u) => u.username === user.username);
     if (existing >= 0) {
@@ -71,9 +113,11 @@ export const store = {
       users.push(user);
     }
     setLocal('users', users);
+    try { await setDoc(doc(db, 'users', user.username), user); } catch(e) {}
   },
-  deleteUser: (username: string) => {
+  deleteUser: async (username: string) => {
     setLocal('users', store.getUsers().filter((u) => u.username !== username));
+    try { await deleteDoc(doc(db, 'users', username)); } catch(e) {}
   },
 
   getCurrentUser: () => getLocal<User | null>('currentUser', null),

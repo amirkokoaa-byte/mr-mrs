@@ -24,6 +24,7 @@ export interface Product {
   showInSpecialOffers?: boolean;
   isPinned?: boolean;
   views?: number;
+  shippingCost?: number;
 }
 
 export interface User {
