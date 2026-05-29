@@ -210,6 +210,21 @@ const ManageProducts = () => {
     }
   };
 
+  const handleUpdateCat = (id: string, newName: string) => {
+    const updated = categories.map(c => c.id === id ? { ...c, name: newName } : c);
+    setCategories(updated);
+    const cat = updated.find(c => c.id === id);
+    if(cat) store.saveCategory(cat);
+  };
+
+  const handleDeleteCat = (id: string) => {
+    if(window.confirm('هل أنت متأكد من حذف هذا القسم؟')) {
+      store.deleteCategory(id);
+      setCategories(categories.filter(c => c.id !== id));
+      if (category === id) setCategory('');
+    }
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string) => void) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -465,6 +480,25 @@ const ManageProducts = () => {
            {products.length === 0 && <div className="text-gray-500 text-center py-8">لا توجد أصناف</div>}
         </div>
       </div>
+
+      <div className="mt-12">
+        <h2 className="text-xl font-bold mb-6 border-b border-white/10 pb-2">إدارة الأقسام الحالية ({categories.length})</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+           {categories.map(c => (
+             <div key={c.id} className="flex gap-2 bg-white/5 p-3 rounded-xl border border-white/5 items-center">
+               <input 
+                 value={c.name}
+                 onChange={(e) => handleUpdateCat(c.id, e.target.value)}
+                 className="flex-1 bg-transparent border-b border-white/20 px-2 py-1 focus:outline-none focus:border-white transition-colors"
+               />
+               <button onClick={() => handleDeleteCat(c.id)} className="p-2 bg-white/10 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors">
+                 <Trash2 size={16}/>
+               </button>
+             </div>
+           ))}
+           {categories.length === 0 && <div className="text-gray-500 col-span-3 text-center py-4">لا توجد أقسام</div>}
+        </div>
+      </div>
     </div>
   );
 };
@@ -556,6 +590,10 @@ const ManageSettings = () => {
           <div>
             <label className="block text-sm text-gray-400 mb-2">رقم حساب فوري</label>
             <input value={settings.fawryNumber} onChange={e=>handleChange('fawryNumber', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">رقم المدفوعات (لاستلام الإيصال عبر واتس اب)</label>
+            <input value={settings.paymentsNumber || ''} onChange={e=>handleChange('paymentsNumber', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 focus:outline-none focus:border-white/30" dir="ltr" />
           </div>
         </div>
       </div>

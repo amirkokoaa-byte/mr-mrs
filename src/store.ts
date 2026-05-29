@@ -38,9 +38,7 @@ export const initFirebaseSync = () => {
 
    onSnapshot(collection(db, 'products'), (snapshot) => {
        const products = snapshot.docs.map(d => d.data() as Product);
-       if (products.length > 0) {
-           setLocal('products', products);
-       }
+       setLocal('products', products);
    });
 
    onSnapshot(doc(db, 'config', 'settings'), (docSnap) => {
@@ -51,9 +49,7 @@ export const initFirebaseSync = () => {
 
    onSnapshot(collection(db, 'categories'), (snapshot) => {
        const categories = snapshot.docs.map(d => d.data() as Category);
-       if (categories.length > 0) {
-           setLocal('categories', categories);
-       }
+       setLocal('categories', categories);
    });
 };
 
@@ -98,9 +94,18 @@ export const store = {
   getCategories: () => getLocal<Category[]>('categories', []),
   saveCategory: async (category: Category) => {
     const cats = store.getCategories();
-    cats.push(category);
+    const existing = cats.findIndex((c) => c.id === category.id);
+    if (existing >= 0) {
+      cats[existing] = category;
+    } else {
+      cats.push(category);
+    }
     setLocal('categories', cats);
     try { await setDoc(doc(db, 'categories', category.id), category); } catch(e) {}
+  },
+  deleteCategory: async (id: string) => {
+    setLocal('categories', store.getCategories().filter((c) => c.id !== id));
+    try { await deleteDoc(doc(db, 'categories', id)); } catch(e) {}
   },
 
   getUsers: () => getLocal<User[]>('users', []),

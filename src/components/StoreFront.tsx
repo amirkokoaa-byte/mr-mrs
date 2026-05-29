@@ -27,7 +27,10 @@ export const StoreFront = ({
 
   useEffect(() => {
     setCategories(store.getCategories());
-    const timer = setTimeout(() => setShowNotification(true), 5000);
+    const timer = setTimeout(() => {
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 2000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, []);
 

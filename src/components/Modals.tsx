@@ -114,25 +114,46 @@ export const CheckoutModal = ({ isOpen, onClose, settings }: { isOpen: boolean, 
           
           <div className="space-y-4">
             {settings.walletNumber && (
-              <div className="bg-white/5 p-[15px] rounded-[10px] flex justify-between items-center border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
+              <div onClick={() => { navigator.clipboard.writeText(settings.walletNumber); alert('تم النسخ'); }} className="bg-white/5 p-[15px] rounded-[10px] flex justify-between items-center border border-white/5 cursor-pointer hover:bg-white/10 transition-colors group relative">
                 <span className="font-medium text-gray-400">المحفظة الإلكترونية</span>
                 <span className="font-mono text-lg font-bold tracking-widest">{settings.walletNumber}</span>
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">نسخ</span>
               </div>
             )}
             {settings.instapayHandle && (
-              <div className="bg-white/5 p-[15px] rounded-[10px] flex justify-between items-center border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
+              <div onClick={() => { navigator.clipboard.writeText(settings.instapayHandle); alert('تم النسخ'); }} className="bg-white/5 p-[15px] rounded-[10px] flex justify-between items-center border border-white/5 cursor-pointer hover:bg-white/10 transition-colors group relative">
                 <span className="font-medium text-gray-400">إنستا باي (InstaPay)</span>
                 <span className="font-mono text-lg font-bold tracking-wider text-purple-400">{settings.instapayHandle}</span>
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">نسخ</span>
               </div>
             )}
             {settings.fawryNumber && (
-              <div className="bg-white/5 p-[15px] rounded-[10px] flex justify-between items-center border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
+              <div onClick={() => { navigator.clipboard.writeText(settings.fawryNumber); alert('تم النسخ'); }} className="bg-white/5 p-[15px] rounded-[10px] flex justify-between items-center border border-white/5 cursor-pointer hover:bg-white/10 transition-colors group relative">
                 <span className="font-medium text-gray-400">رقم فوري</span>
                 <span className="font-mono text-lg font-bold tracking-wider text-yellow-400">{settings.fawryNumber}</span>
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">نسخ</span>
               </div>
             )}
           </div>
           <p className="text-sm text-gray-400 text-center mt-4">سيتم مراجعة الطلب بعد التأكد من وصول التحويل.</p>
+          
+          <div className="mt-6 flex flex-col gap-3">
+             <button
+               onClick={() => {
+                 const targetNumber = settings.paymentsNumber || settings.whatsappNumber;
+                 if (targetNumber) {
+                   const cleanNum = targetNumber.replace(/[^0-9]/g, '');
+                   window.open(`https://wa.me/${cleanNum}?text=${encodeURIComponent('مرحباً، أود إرسال صورة إيصال الدفع لطلبي.')}`, '_blank');
+                 } else {
+                   alert('رقم التواصل غير متوفر.');
+                 }
+               }}
+               className="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl hover:bg-[#1ebd5a] transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg flex items-center justify-center gap-2"
+             >
+               ارسل صورة الايصال
+             </button>
+             <button onClick={onClose} className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg">تم الدفع</button>
+          </div>
         </div>
       </motion.div>
     </div>

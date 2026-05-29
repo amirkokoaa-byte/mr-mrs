@@ -40,12 +40,16 @@ export default function App() {
     const handleStorage = () => {
       setProducts(store.getProducts());
       setSettings(store.getSettings());
-      if (user) {
+      
+      const currentUser = store.getCurrentUser();
+      setUser(currentUser);
+      
+      if (currentUser) {
          const currentUsers = store.getUsers();
-         const updatedMe = currentUsers.find(u => u.username === user.username);
+         const updatedMe = currentUsers.find(u => u.username === currentUser.username);
          if (updatedMe) {
            setUser(updatedMe);
-           // Avoid overriding local changes during storage sync, or check if it actually changed
+           store.setCurrentUser(updatedMe);
          }
       }
     };
@@ -55,7 +59,7 @@ export default function App() {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('local-storage-sync', handleStorage);
     };
-  }, [user?.username]);
+  }, []);
 
   // Sync products if they change (e.g., deleted in admin)
   useEffect(() => {

@@ -47,6 +47,7 @@ export interface AppSettings {
   walletNumber: string;
   instapayHandle: string;
   fawryNumber: string;
+  paymentsNumber?: string;
   socialLinks?: {
     phone?: string;
     instagram?: string;
