@@ -265,8 +265,10 @@ const ManageProducts = () => {
   };
 
   const handleDelete = (id: string) => {
-    store.deleteProduct(id);
-    setProducts(products.filter(p => p.id !== id));
+    if (window.confirm("هل أنت متأكد من رغبتك في حذف هذا المنتج؟")) {
+      store.deleteProduct(id);
+      setProducts(products.filter(p => p.id !== id));
+    }
   };
 
   return (
@@ -422,6 +424,27 @@ const ManageSettings = () => {
     }));
   };
 
+  const handleAddBranch = () => {
+    setSettings(prev => ({
+      ...prev,
+      branches: [...(prev.branches || []), { id: Date.now().toString(), name: '', address: '', phone: '', mapLink: '' }]
+    }));
+  };
+
+  const handleUpdateBranch = (id: string, field: string, value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      branches: prev.branches?.map(b => b.id === id ? { ...b, [field]: value } : b)
+    }));
+  };
+
+  const handleDeleteBranch = (id: string) => {
+    setSettings(prev => ({
+      ...prev,
+      branches: prev.branches?.filter(b => b.id !== id)
+    }));
+  };
+
   const handleSave = () => {
     store.saveSettings(settings);
     alert('تم حفظ الإعدادات بنجاح. قد تحتاج لإعادة تحميل الصفحة لرؤية بعض التغييرات.');
@@ -495,6 +518,46 @@ const ManageSettings = () => {
           </div>
         </div>
       </div>
+
+      <div className="bg-white/5 p-4 rounded-xl border border-white/10 mt-6">
+        <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+          <h3 className="font-bold">فروعنا</h3>
+          <button onClick={handleAddBranch} className="p-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-white transition-colors flex items-center gap-2 text-xs">
+            <Plus size={14} /> إضافة فرع
+          </button>
+        </div>
+        <div className="space-y-4">
+          {(settings.branches || []).map((branch) => (
+            <div key={branch.id} className="p-4 bg-black/40 rounded-lg border border-white/10 relative group">
+              <button onClick={() => handleDeleteBranch(branch.id)} className="absolute top-2 left-2 p-2 text-gray-400 hover:text-red-500 bg-white/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                <Trash2 size={16} />
+              </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">اسم الفرع</label>
+                  <input value={branch.name} onChange={e=>handleUpdateBranch(branch.id, 'name', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded p-2 focus:outline-none focus:border-white/30 text-sm" placeholder="مثال: فرع مدينة نصر" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">رقم الهاتف للفرع</label>
+                  <input value={branch.phone} onChange={e=>handleUpdateBranch(branch.id, 'phone', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded p-2 focus:outline-none focus:border-white/30 text-sm" placeholder="رقم الهاتف" dir="ltr" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs text-gray-400 mb-1">العنوان التفصيلي</label>
+                  <input value={branch.address} onChange={e=>handleUpdateBranch(branch.id, 'address', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded p-2 focus:outline-none focus:border-white/30 text-sm" placeholder="العنوان" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs text-gray-400 mb-1">رابط جوجل ماب (Location)</label>
+                  <input value={branch.mapLink} onChange={e=>handleUpdateBranch(branch.id, 'mapLink', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded p-2 focus:outline-none focus:border-white/30 text-sm" placeholder="https://maps.google.com/..." dir="ltr" />
+                </div>
+              </div>
+            </div>
+          ))}
+          {(!settings.branches || settings.branches.length === 0) && (
+            <p className="text-gray-500 text-sm text-center py-4">لم يتم إضافة فروع بعد.</p>
+          )}
+        </div>
+      </div>
+
       <button onClick={handleSave} className="bg-white text-black font-bold px-8 py-3 rounded-lg hover:bg-gray-200 transition-colors mt-6">حفظ الإعدادات</button>
     </div>
   );

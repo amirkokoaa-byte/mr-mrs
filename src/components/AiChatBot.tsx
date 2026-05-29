@@ -82,14 +82,43 @@ export const AiChatBot = ({ appName }: { appName: string }) => {
         });
         
         if (!res.ok) {
-            addBotMessage("عفواً، الخدمة غير متاحة حالياً بسبب خطأ في الخادم.");
+            handleClientFallbackChat(val, products, settings);
             return;
         }
 
         const data = await res.json();
         addBotMessage(data.reply);
     } catch (err) {
-        addBotMessage("عفواً، لا أستطيع الاتصال بالخادم الآن.");
+        handleClientFallbackChat(val, products, settings);
+    }
+  };
+
+  const handleClientFallbackChat = (msg: string, products: any[], settings: any) => {
+    const text = msg.toLowerCase();
+    
+    // Very basic client-side intent matching based on keywords
+    if (text.includes("تواصل") || text.includes("رقم") || text.includes("خدمة عملاء")) {
+        addBotMessage(`تقدر تتواصل معانا عبر الواتساب على الرقم: ${settings.whatsappNumber || "غير متوفر"}`);
+    } else if (text.includes("شحن") || text.includes("توصيل")) {
+        addBotMessage("يتم تحديد مصاريف الشحن حسب المحافظة في صفحة إتمام الطلب، وأحياناً تكون هناك عروض خاصة على الشحن!");
+    } else if (text.includes("بكيلو") || text.includes("سعر") || text.includes("اسعار")) {
+        addBotMessage("يمكنك تصفح المنتجات في الصفحة الرئيسية لمعرفة الأسعار الحالية. لدينا تشكيلة متنوعة!");
+    } else if (text.includes("فروع") || text.includes("موقع") || text.includes("مكان")) {
+        if (settings.branches && settings.branches.length > 0) {
+            addBotMessage(`لدينا عدة فروع أهلا بك! ${settings.branches.map((b: any) => b.name).join('، ')}`);
+        } else {
+            addBotMessage("نحن متجر إلكتروني، التوصيل متاح لجميع المحافظات!");
+        }
+    } else if (text.includes("شكرا") || text.includes("يعطيك العافية")) {
+        addBotMessage("العفو يا فندم، أنا دائماً تحت أمرك!");
+    } else {
+        // Fallback or attempt to search products
+        const matches = products.filter(p => p.name.includes(msg) || (p.description && p.description.includes(msg)));
+        if (matches.length > 0) {
+            addBotMessage(`موجود لدينا "${matches[0].name}" بسعر ${matches[0].price} ج.م، يمكنك الضغط عليه من الصفحة الرئيسية للتفاصيل.`);
+        } else {
+            addBotMessage("أهلاً بك! أنا المساعد الآلي. يمكنك سؤالي عن منتجاتنا، أسعارنا، فروعنا أو الشحن.");
+        }
     }
   };
 
