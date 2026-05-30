@@ -51,7 +51,7 @@ export const CartModal = ({ isOpen, onClose, cart, products, onUpdateQuantity, o
               if (!p) return null;
               return (
                 <div key={item.productId} className="flex flex-col sm:flex-row gap-4 bg-white/5 p-4 rounded-[10px] items-center border border-white/5">
-                  <img src={p.imageUrl} alt={p.name} className="w-24 h-24 object-cover rounded-md" onError={e => e.currentTarget.src = 'https://placehold.co/200x200?text=Facebook+Link'} />
+                  <img src={p.imageUrl || undefined} alt={p.name} className="w-24 h-24 object-cover rounded-md" onError={e => e.currentTarget.src = 'https://placehold.co/200x200?text=Facebook+Link'} />
                   <div className="flex-1 text-center sm:text-right">
                     <h3 className="font-medium text-lg">{p.name}</h3>
                     <p className="text-lg font-bold mt-2">{(calculatePrice(p.price, p.discount) * item.quantity).toFixed(2)} ج.م</p>

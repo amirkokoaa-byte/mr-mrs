@@ -73,7 +73,7 @@ export const StoreFront = ({
       {/* Hero Banner */}
       <div className="relative overflow-hidden h-[160px] m-[15px] rounded-[12px] border border-white/5 flex items-center justify-center bg-black">
         <img 
-          src={bannerImage} 
+          src={bannerImage || undefined} 
           alt="Banner" 
           className="absolute inset-0 w-full h-full object-cover opacity-50"
         />
@@ -98,7 +98,7 @@ export const StoreFront = ({
                   <div key={p.id} onClick={() => onProductClick(p)} className="inline-flex flex-col mx-3 w-32 cursor-pointer group">
                     <div className="relative w-full h-32 rounded-xl overflow-hidden mb-2">
                        {p.discount > 0 && <span className="absolute top-0 right-0 bg-[#ff4444] text-white text-[10px] font-bold px-2 py-1 z-10 m-1 rounded shadow-md">-{p.discount}%</span>}
-                       <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onError={e => e.currentTarget.src = 'https://placehold.co/400x400?text=Facebook+Link'} />
+                       <img src={p.imageUrl || undefined} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onError={e => e.currentTarget.src = 'https://placehold.co/400x400?text=Facebook+Link'} />
                     </div>
                     <div className="text-center font-bold text-sm truncate w-full">{p.name}</div>
                     <div className="text-center">

@@ -440,14 +440,14 @@ const ManageProducts = () => {
             <div className="mt-4 flex flex-wrap gap-2">
               {imageUrl && (
                 <div className="relative group">
-                   <img src={imageUrl} alt="preview main" className="h-20 w-20 rounded-lg object-cover border border-white/10" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
+                   <img src={imageUrl || undefined} alt="preview main" className="h-20 w-20 rounded-lg object-cover border border-white/10" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
                    <span className="absolute -top-2 -right-2 bg-indigo-500 text-[10px] px-1 rounded">رئيسية</span>
                    <button type="button" onClick={() => setImageUrl('')} className="absolute top-1 right-1 p-1 bg-red-500/80 rounded-full opacity-0 group-hover:opacity-100"><Trash2 size={12} /></button>
                 </div>
               )}
               {images.map((img, idx) => (
                 <div key={idx} className="relative group">
-                   <img src={img} alt={`preview ${idx}`} className="h-20 w-20 rounded-lg object-cover border border-white/10" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
+                   <img src={img || undefined} alt={`preview ${idx}`} className="h-20 w-20 rounded-lg object-cover border border-white/10" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
                    <button type="button" onClick={() => setImages(images.filter((_, i) => i !== idx))} className="absolute top-1 right-1 p-1 bg-red-500/80 rounded-full opacity-0 group-hover:opacity-100"><Trash2 size={12} /></button>
                 </div>
               ))}
@@ -466,7 +466,7 @@ const ManageProducts = () => {
            {products.map(p => (
              <div key={p.id} className="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 items-center relative overflow-hidden group">
                {p.isArchived && <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-none z-10 font-bold text-red-500 tracking-widest bg-[url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAKrVq36zwjjgzhhYWGMYAEYB8RmROaABADeOQ8CXl/xfgAAAABJRU5ErkJggg==)]">مؤرشف</div>}
-               <img src={p.imageUrl} alt={p.name} className="w-16 h-16 object-cover rounded-md" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=FB+Link'} />
+               <img src={p.imageUrl || undefined} alt={p.name} className="w-16 h-16 object-cover rounded-md" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=FB+Link'} />
                <div className="flex-1 z-20">
                  <h4 className="font-bold truncate text-base">{p.name} {!p.isAvailable && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full mr-2">مغلق</span>}</h4>
                  <div className="text-sm text-gray-400">{p.price} ج.م {p.discount > 0 && <span className="text-[#ff4444] mr-2">(-{p.discount}%)</span>}</div>
@@ -574,7 +574,7 @@ const ManageSettings = () => {
             <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, (url) => handleChange('bannerImage', url))} />
           </label>
         </div>
-        {settings.bannerImage && <img src={settings.bannerImage} alt="Preview" className="mt-4 h-40 w-full object-cover rounded-xl border border-white/10 opacity-80" />}
+        {settings.bannerImage && <img src={settings.bannerImage || undefined} alt="Preview" className="mt-4 h-40 w-full object-cover rounded-xl border border-white/10 opacity-80" />}
       </div>
       <div className="bg-white/5 p-4 rounded-xl border border-white/10">
         <h3 className="font-bold mb-4 border-b border-white/10 pb-2">طرق الدفع</h3>

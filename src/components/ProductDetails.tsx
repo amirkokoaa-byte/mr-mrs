@@ -137,7 +137,7 @@ export const ProductDetails = ({
           {/* Image */}
           <div className="flex flex-col gap-3">
             <div className="relative rounded-xl overflow-hidden bg-[#3d3d3d] border border-white/5 aspect-square">
-              <img src={selectedMainImage} alt={product.name} className="w-full h-full object-cover" onError={e => e.currentTarget.src = 'https://placehold.co/800x800?text=Facebook+Link'} />
+              <img src={selectedMainImage || undefined} alt={product.name} className="w-full h-full object-cover" onError={e => e.currentTarget.src = 'https://placehold.co/800x800?text=Facebook+Link'} />
               
               <div className="absolute top-[10px] left-[10px] bg-black/60 rounded-lg p-2 z-10 shadow-md flex flex-col items-center justify-center min-w-[50px] backdrop-blur-sm border border-white/10">
                 <Eye size={18} className="text-gray-300 mb-1" />
@@ -165,11 +165,11 @@ export const ProductDetails = ({
             {product.images && product.images.length > 0 && (
                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                   <button onClick={() => setSelectedMainImage(product.imageUrl)} className={cn("w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors", selectedMainImage === product.imageUrl ? "border-[#ff4444]" : "border-transparent opacity-60 hover:opacity-100")}>
-                     <img src={product.imageUrl} className="w-full h-full object-cover bg-[#3d3d3d]" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
+                     <img src={product.imageUrl || undefined} className="w-full h-full object-cover bg-[#3d3d3d]" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
                   </button>
                   {product.images.map((img, idx) => (
                     <button key={idx} onClick={() => setSelectedMainImage(img)} className={cn("w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors", selectedMainImage === img ? "border-[#ff4444]" : "border-transparent opacity-60 hover:opacity-100")}>
-                       <img src={img} className="w-full h-full object-cover bg-[#3d3d3d]" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
+                       <img src={img || undefined} className="w-full h-full object-cover bg-[#3d3d3d]" onError={e => e.currentTarget.src = 'https://placehold.co/100x100?text=Facebook+Link'} />
                     </button>
                   ))}
                </div>
@@ -315,7 +315,7 @@ export const ProductDetails = ({
                 {similarProducts.map((p) => (
                   <div key={p.id} onClick={() => onProductClick(p)} className="bg-[#2d2d2d] rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform border border-white/5 relative group">
                      <div className="aspect-[4/5] relative w-full overflow-hidden bg-[#1a1a1a]">
-                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => e.currentTarget.src = 'https://placehold.co/400x400?text=Facebook+Link'} />
+                        <img src={p.imageUrl || undefined} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => e.currentTarget.src = 'https://placehold.co/400x400?text=Facebook+Link'} />
                         {p.discount > 0 && <span className="absolute top-2 right-2 bg-[#ff4444] text-white text-[10px] font-bold px-2 py-1 z-10 rounded shadow-md">-{p.discount}%</span>}
                      </div>
                      <div className="p-3">

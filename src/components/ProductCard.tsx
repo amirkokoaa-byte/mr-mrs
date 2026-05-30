@@ -31,7 +31,7 @@ export const ProductCard = ({
     >
       <div className="relative h-[180px] overflow-hidden bg-[#3d3d3d] rounded-[10px]">
         <img 
-          src={product.imageUrl} 
+          src={product.imageUrl || undefined} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           onError={(e) => { e.currentTarget.src = 'https://placehold.co/400x400?text=Facebook+Link'; }}

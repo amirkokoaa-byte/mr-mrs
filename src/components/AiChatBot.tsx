@@ -95,32 +95,68 @@ export const AiChatBot = ({ appName }: { appName: string }) => {
   };
 
   const handleClientFallbackChat = (msg: string, products: any[], settings: any) => {
-    const text = msg.toLowerCase();
+    const text = msg.toLowerCase().trim();
     
-    // Very basic client-side intent matching based on keywords
-    if (text.includes("تواصل") || text.includes("رقم") || text.includes("خدمة عملاء")) {
-        addBotMessage(`تقدر تتواصل معانا عبر الواتساب على الرقم: ${settings.whatsappNumber || "غير متوفر"}`);
-    } else if (text.includes("شحن") || text.includes("توصيل")) {
-        addBotMessage("يتم تحديد مصاريف الشحن حسب المحافظة في صفحة إتمام الطلب، وأحياناً تكون هناك عروض خاصة على الشحن!");
-    } else if (text.includes("بكيلو") || text.includes("سعر") || text.includes("اسعار")) {
-        addBotMessage("يمكنك تصفح المنتجات في الصفحة الرئيسية لمعرفة الأسعار الحالية. لدينا تشكيلة متنوعة!");
-    } else if (text.includes("فروع") || text.includes("موقع") || text.includes("مكان")) {
-        if (settings.branches && settings.branches.length > 0) {
-            addBotMessage(`لدينا عدة فروع أهلا بك! ${settings.branches.map((b: any) => b.name).join('، ')}`);
-        } else {
-            addBotMessage("نحن متجر إلكتروني، التوصيل متاح لجميع المحافظات!");
-        }
-    } else if (text.includes("شكرا") || text.includes("يعطيك العافية")) {
-        addBotMessage("العفو يا فندم، أنا دائماً تحت أمرك!");
-    } else {
-        // Fallback or attempt to search products
-        const matches = products.filter(p => p.name.includes(msg) || (p.description && p.description.includes(msg)));
-        if (matches.length > 0) {
-            addBotMessage(`موجود لدينا "${matches[0].name}" بسعر ${matches[0].price} ج.م، يمكنك الضغط عليه من الصفحة الرئيسية للتفاصيل.`);
-        } else {
-            addBotMessage("أهلاً بك! أنا المساعد الآلي. يمكنك سؤالي عن منتجاتنا، أسعارنا، فروعنا أو الشحن.");
-        }
+    // Check for passwords explicitly
+    if (text.includes("باسورد") || text.includes("سر") || text.includes("حساب") || text.includes("password")) {
+        addBotMessage("عفواً، لا يُسمح لي بطلب أو التعامل مع أي كلمات مرور أو تفاصيل حسابات حفاظاً على خصوصيتك وأمان بياناتك.");
+        return;
     }
+
+    if (text.includes("رخيص") || text.includes("ارخص")) {
+        const sorted = [...products].filter(p => !p.isArchived).sort((a,b) => a.price - b.price);
+        if (sorted.length > 0) {
+            addBotMessage(`أرخص منتج لدينا هو "${sorted[0].name}" بسعر ${sorted[0].price} ج.م. هل تود شراءه؟`);
+        } else {
+            addBotMessage("عفواً لا توجد منتجات حالياً.");
+        }
+        return;
+    }
+
+    if (text.includes("غالي") || text.includes("اغلى")) {
+        const sorted = [...products].filter(p => !p.isArchived).sort((a,b) => b.price - a.price);
+        if (sorted.length > 0) {
+            addBotMessage(`حصرياً، أعلى منتجاتنا هو "${sorted[0].name}" بسعر ${sorted[0].price} ج.م. هل يعجبك وتريد تسجيل بياناتك لطلبه؟`);
+        } else {
+            addBotMessage("عفواً لا توجد منتجات حالياً.");
+        }
+        return;
+    }
+
+    if (text.includes("خصم") || text.includes("عروض") || text.includes("خصومات")) {
+        const discounted = products.filter(p => !p.isArchived && p.discount > 0);
+        if (discounted.length > 0) {
+            const names = discounted.slice(0, 3).map(p => `"${p.name}" (خصم ${p.discount}%)`).join(' و ');
+            addBotMessage(`نعم بالطبع! لدينا خصومات هائلة على منتجات مثل: ${names}. هل تود طلب أي منها الآن؟`);
+        } else {
+            addBotMessage("حالياً لا توجد خصومات فعالة، لكن أسعارنا 항상 مميزة جداً! هل تبحث عن منتج معين؟");
+        }
+        return;
+    }
+
+    if (text.includes("تواصل") || text.includes("رقم") || text.includes("خدمة عملاء") || text.includes("واتس")) {
+        addBotMessage(`بالتأكيد، رقم التواصل الخاص بنا (واتساب/اتصال) هو: ${settings.whatsappNumber || "غير متوفر"}`);
+        return;
+    }
+
+    if (text.includes("شراء") || text.includes("اشتري") || text.includes("عايز") || text.includes("اطلب")) {
+        addBotMessage("لإتمام الطلب، يرجى تزويدي بالبيانات التالية: \n1. الاسم الثلاثي\n2. رقم الهاتف\n3. العنوان بالتفصيل\n4. اسم المنتج أو الصنف الذي تود شراءه.");
+        return;
+    }
+
+    if (text.includes("شحن") || text.includes("توصيل")) {
+        addBotMessage("بالتأكيد! متوفر شحن وتوصيل لجميع المحافظات. يتم احتساب التكلفة أثناء الدفع.");
+        return;
+    }
+
+    // Try finding a direct product match
+    const match = products.find(p => text.includes(p.name.toLowerCase()));
+    if (match) {
+        addBotMessage(`المنتج "${match.name}" متاح لدينا بسعر ${match.price} ج.م. إذا أردت إتمام الشراء، من فضلك أرسل لي اسمك وعنوانك ورقم هاتفك.`);
+        return;
+    }
+
+    addBotMessage("مرحباً بك! أنا مساعدك الذكي للمبيعات. يمكنني إخبارك بأقوى الخصومات، أرخص منتجاتنا، ومساعدتك في تسجيل طلبك بكل سهولة (الاسم، العنوان، التليفون، الصنف). كيف يمكنني مساعدتك اليوم؟");
   };
 
   return (
