@@ -129,7 +129,7 @@ export const AiChatBot = ({ appName }: { appName: string }) => {
             const names = discounted.slice(0, 3).map(p => `"${p.name}" (خصم ${p.discount}%)`).join(' و ');
             addBotMessage(`نعم بالطبع! لدينا خصومات هائلة على منتجات مثل: ${names}. هل تود طلب أي منها الآن؟`);
         } else {
-            addBotMessage("حالياً لا توجد خصومات فعالة، لكن أسعارنا 항상 مميزة جداً! هل تبحث عن منتج معين؟");
+            addBotMessage("حالياً لا توجد خصومات فعالة، لكن أسعارنا مميزة جداً! هل تبحث عن منتج معين؟");
         }
         return;
     }
@@ -144,7 +144,7 @@ export const AiChatBot = ({ appName }: { appName: string }) => {
         return;
     }
 
-    if (text.includes("شحن") || text.includes("توصيل")) {
+    if (text.includes("شحن") || text.includes("توصيل") || text.includes("محافظات")) {
         addBotMessage("بالتأكيد! متوفر شحن وتوصيل لجميع المحافظات. يتم احتساب التكلفة أثناء الدفع.");
         return;
     }
