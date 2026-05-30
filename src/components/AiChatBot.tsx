@@ -156,7 +156,13 @@ export const AiChatBot = ({ appName }: { appName: string }) => {
         return;
     }
 
-    addBotMessage("مرحباً بك! أنا مساعدك الذكي للمبيعات. يمكنني إخبارك بأقوى الخصومات، أرخص منتجاتنا، ومساعدتك في تسجيل طلبك بكل سهولة (الاسم، العنوان، التليفون، الصنف). كيف يمكنني مساعدتك اليوم؟");
+    const discounted = products.filter(p => !p.isArchived && p.discount > 0);
+    if (discounted.length > 0) {
+        const names = discounted.slice(0, 3).map(p => `"${p.name}" (خصم ${p.discount}%)`).join(' و ');
+        addBotMessage(`أهلاً بك! إكتشف أقوى عروضنا حالياً على: ${names}. هل تود طلب أي منها أو تبحث عن شيء محدد؟`);
+    } else {
+        addBotMessage("مرحباً بك! أنا مساعدك الذكي للمبيعات. لا توجد عروض حالياً ولكن أسعارنا مميزة. لإتمام أي طلب يرجى تزويدنا بالاسم، العنوان، ورقم الهاتف.");
+    }
   };
 
   return (
